@@ -1,10 +1,14 @@
-from random import choices
+import pickle
+from datetime import datetime
+from random import choices, random
 from statistics import mean
-from typing import Type, List, Iterable
+from typing import Type, List, Iterable, Optional
+import os
 
 
 class Individual:
-    mutation_rate: float = 0.1
+    mutation_probability: float = 0.01
+    mating_probability: float = 0.01
 
     def rate(self) -> int:
         raise NotImplementedError
@@ -19,7 +23,7 @@ class Individual:
         raise NotImplementedError
 
     def reproduce(self, other: "Individual") -> "Individual":
-        if other is self:
+        if other is self or random() > self.mating_probability:
             return self.clone()
         return self.mate(other)
 
@@ -45,17 +49,46 @@ def reproduce(population: Population) -> Population:
 
 
 def run(individual_class: Type[Individual], population_size, *args, **kwargs):
+    populations = []
     population = init_population(individual_class, population_size, *args, **kwargs)
+    populations.append(population)
+    print("max ", "avg ", "min ", sep="\t")
     while True:
         try:
             mutate(population)
             population = reproduce(population)
             scores = [i.rate() for i in population]
-            print("-" * 30)
-            print(min(scores))
-            print(mean(scores))
-            print(max(scores))
+            print(f"\r{format(max(scores), '<4')}\t{format(mean(scores), '<4')}\t{format(min(scores), '<4')}", end="")
             pass
         except KeyboardInterrupt:
             break
+        populations.append(population)
+    print()
     print(sorted(population, key=lambda i: i.rate()))
+    return populations
+
+
+def save_population_to_file(populations: List[Population], file_path: Optional[str] = None) -> None:
+    if file_path is None:
+        directory_name = "data"
+        if not os.path.exists(directory_name):
+            os.makedirs(directory_name)
+        elif not os.path.isdir(directory_name):
+            raise RuntimeError("./data is not a directory")
+        file_path = os.path.join(directory_name, f"saved_population_history_{datetime.now()}")
+    with open(file_path, "wb") as f:
+        pickle.dump(populations, f)
+    print(
+        f"population saved into {os.path.abspath(file_path)}"
+        f" File size : {human_readable_size(os.path.getsize(file_path))}"
+    )
+
+
+def human_readable_size(size, precision=2):
+    # Source : https://stackoverflow.com/a/32009595/7629797
+    suffixes = ["B", "KB", "MB", "GB", "TB"]
+    suffix_index = 0
+    while size > 1024 and suffix_index < 4:
+        suffix_index += 1  # increment the index of the suffix
+        size = size / 1024.0  # apply the division
+    return "%.*f%s" % (precision, size, suffixes[suffix_index])

@@ -21,8 +21,19 @@ class Cell:
     def __repr__(self):
         return f"{type(self).__name__}({self.position}, value={self.value})"
 
+    def copy(self) -> "Cell":
+        return Cell(self.position, self.value)
+
 
 class Grid(Individual):
+    def clone(self) -> "Individual":
+        new = Grid(self.given_cells)
+        new.cells = [cell.copy() for cell in self.cells]
+        return new
+
+    def mate(self, other: "Individual") -> "Individual":
+        return self.clone()
+
     def __init__(self, given_cells: Set[Cell]):
         self.given_cells = given_cells
         self.cells: Set[Cell] = given_cells.copy()
@@ -62,7 +73,7 @@ class Grid(Individual):
 
     def mutate(self):
         for cell in self.cells:
-            if random() < self.mutation_rate:
+            if random() < self.mutation_probability:
                 cell.value = randint(1, 9)
 
 

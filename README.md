@@ -1,6 +1,6 @@
 # SudokuSolver
 
-##To-Do List :
+## To-Do List :
 1.	Ajout de la méthode de cotation dans l’algorithme génétique
 2.	Association du choix de reproduction des individus en fonction des cotes de chaque membre
 3.	Premiers tests : obtention de la moyenne d’individus et de générations nécessaires pour avoir un résultat correct (taux d’erreurs faible)

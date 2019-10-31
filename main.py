@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, random
 from time import time
 from typing import Tuple, Optional, Set
 
@@ -59,6 +59,11 @@ class Grid(Individual):
             + sum([len(it) for it in columns.values()])
             + sum([len(it) for it in squares.values()])
         )
+
+    def mutate(self):
+        for cell in self.cells:
+            if random() < self.mutation_rate:
+                cell.value = randint(1, 9)
 
 
 if __name__ == "__main__":

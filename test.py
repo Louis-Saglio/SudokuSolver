@@ -3,7 +3,7 @@ from string_match import String
 
 
 def main():
-    save_population_to_file(run(String, 100, "initial string"))
+    save_population_to_file(run(String, 100, lambda p, mini, avg, maxi: maxi == len(String.goal), "initial string"))
 
 
 if __name__ == "__main__":

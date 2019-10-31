@@ -2,7 +2,7 @@ import pickle
 from datetime import datetime
 from random import choices, random
 from statistics import mean
-from typing import Type, List, Iterable, Optional
+from typing import Type, List, Iterable, Optional, Callable, Union
 import os
 
 
@@ -48,7 +48,16 @@ def reproduce(population: Population) -> Population:
     return [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
 
 
-def run(individual_class: Type[Individual], population_size, *args, **kwargs):
+Number = Union[float, int]
+
+
+def run(
+    individual_class: Type[Individual],
+    population_size,
+    stop_condition: Callable[[Population, Number, Number, Number], bool],
+    *args,
+    **kwargs,
+):
     populations = []
     population = init_population(individual_class, population_size, *args, **kwargs)
     populations.append(population)
@@ -58,8 +67,10 @@ def run(individual_class: Type[Individual], population_size, *args, **kwargs):
             mutate(population)
             population = reproduce(population)
             scores = [i.rate() for i in population]
-            print(f"\r{format(max(scores), '<4')}\t{format(mean(scores), '<4')}\t{format(min(scores), '<4')}", end="")
-            pass
+            maxi, avg, mini = max(scores), mean(scores), min(scores)
+            print(f"\r{format(maxi, '<4')}\t{format(avg, '<4')}\t{format(mini, '<4')}", end="")
+            if stop_condition(population, mini, avg, maxi):
+                break
         except KeyboardInterrupt:
             break
         populations.append(population)

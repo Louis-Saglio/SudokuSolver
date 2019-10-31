@@ -16,16 +16,20 @@ class Individual:
     def clone(self) -> "Individual":
         raise NotImplementedError
 
-    def merge(self, other: "Individual") -> "Individual":
+    def mate(self, other: "Individual") -> "Individual":
         raise NotImplementedError
 
+    def reproduce(self, other: "Individual") -> "Individual":
+        if other is self:
+            return self.clone()
+        return self.mate(other)
 
-class Dog(Individual):
+
+class String(Individual):
     goal = "loremipsumdolorsitamet"
 
-    def __init__(self, name, age):
+    def __init__(self, name):
         self.name = name
-        self.age = age
 
     def mutate(self):
         if random() < 0.1:
@@ -40,11 +44,11 @@ class Dog(Individual):
         return f"{''.join([(l.upper() if l == o else l) for l, o in zip(self.name, self.goal)])} -> {self.rate()}"
 
     def clone(self) -> "Individual":
-        return Dog(self.name, self.age)
+        return String(self.name)
 
-    def merge(self, other: "Dog") -> "Individual":
+    def mate(self, other: "String") -> "Individual":
         name = self.name[0 : randint(0, len(self.name))] + other.name[randint(0, len(other.name)) : len(other.name)]
-        return Dog(name[:22], 0)
+        return String(name[:22])
 
 
 Population = List[Individual]
@@ -64,11 +68,11 @@ def reproduce(population: Population) -> Population:
     scores = [max(i.rate(), 1) ** 2 for i in population]
     new_pop_f = choices(population, scores, k=len(population))
     new_pop_m = choices(population, scores, k=len(population))
-    return [father.merge(mother) for father, mother in zip(new_pop_f, new_pop_m)]
+    return [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
 
 
 def main():
-    population = init_population(Dog, 1000, "german shepard", age=5)
+    population = init_population(String, 5000, "german shepard")
     while True:
         try:
             mutate(population)

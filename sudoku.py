@@ -44,6 +44,7 @@ class Grid(Individual):
                 if (i, j) not in coordinates:
                     self.cells.add(Cell(Position((i, j)), None))
         assert len(self.cells) == 81
+        self.randomly_fill()
 
     def randomly_fill(self):
         for cell in self.cells:
@@ -75,6 +76,13 @@ class Grid(Individual):
         for cell in self.cells:
             if random() < self.mutation_probability:
                 cell.value = randint(1, 9)
+
+    def __repr__(self):
+        cells = [[0 for __ in range(9)] for _ in range(9)]
+        for cell in self.cells:
+            cells[cell.position.coordinates[0]][cell.position.coordinates[1]] = cell.value
+        cells = [" ".join([str(cell) for cell in row]) for row in cells]
+        return "\n".join(cells)
 
 
 if __name__ == "__main__":

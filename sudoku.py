@@ -1,8 +1,19 @@
-from random import randint, random
+from random import random, shuffle, choices
 from time import time
-from typing import Tuple, Optional, Set
+from typing import Tuple, Optional, Set, List
 
-from genetic import Individual
+from genetic import Individual, Number
+
+
+def build_random_valid_sudoku_values(given_values: List[int]) -> List[int]:
+    numbers = []
+    for _ in range(9):
+        for i in range(1, 10):
+            if i in given_values:
+                given_values.remove(i)
+            else:
+                numbers.append(i)
+    return numbers
 
 
 class Position:
@@ -18,6 +29,10 @@ class Cell:
         self.position = position
         self.value = value
 
+    @staticmethod
+    def build(*data: Tuple[int, int, int]) -> Set["Cell"]:
+        return {Cell(Position((x, y)), value) for x, y, value in data}
+
     def __repr__(self):
         return f"{type(self).__name__}({self.position}, value={self.value})"
 
@@ -28,13 +43,14 @@ class Cell:
 class Grid(Individual):
     def clone(self) -> "Individual":
         new = Grid(self.given_cells)
-        new.cells = [cell.copy() for cell in self.cells]
+        new.cells = {cell.copy() for cell in self.cells}
         return new
 
     def mate(self, other: "Individual") -> "Individual":
         return self.clone()
 
     def __init__(self, given_cells: Set[Cell]):
+        self.mutation_probability = 0.1
         self.given_cells = given_cells
         self.cells: Set[Cell] = given_cells.copy()
         self.dimensions = (9, 9)
@@ -45,13 +61,16 @@ class Grid(Individual):
                     self.cells.add(Cell(Position((i, j)), None))
         assert len(self.cells) == 81
         self.randomly_fill()
+        # print(self)
+        # exit()
 
     def randomly_fill(self):
-        for cell in self.cells:
-            if cell not in self.given_cells:
-                cell.value = randint(1, 9)
+        values = build_random_valid_sudoku_values([i.value for i in self.given_cells])
+        shuffle(values)
+        for cell, value in zip(self.cells.difference(self.given_cells), values):
+            cell.value = value
 
-    def rate(self) -> int:
+    def _rate(self) -> Number:
         rows, columns, squares = {}, {}, {}
         for cell in self.cells:
             row_key = cell.position.coordinates[0]
@@ -73,14 +92,15 @@ class Grid(Individual):
         )
 
     def mutate(self):
-        for cell in self.cells:
-            if random() < self.mutation_probability:
-                cell.value = randint(1, 9)
+        if random() < self.mutation_probability:
+            cells = list(self.cells.difference(self.given_cells))
+            cell1, cell2 = choices(cells, k=2)
+            cell1.value, cell2.value = cell2.value, cell1.value
 
     def __repr__(self):
         cells = [[0 for __ in range(9)] for _ in range(9)]
         for cell in self.cells:
-            cells[cell.position.coordinates[0]][cell.position.coordinates[1]] = cell.value
+            cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = cell.value
         cells = [" ".join([str(cell) for cell in row]) for row in cells]
         return "\n".join(cells)
 
@@ -89,5 +109,5 @@ if __name__ == "__main__":
     start = time()
     grid = Grid({Cell(Position((3, 5)), 8)})
     grid.randomly_fill()
-    print(grid.rate())
+    print(grid.normalized_rate())
     print("\n".join([str(it) for it in grid.cells]))

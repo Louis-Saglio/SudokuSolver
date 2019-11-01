@@ -1,7 +1,7 @@
 from random import random, randint, choice
 from string import ascii_lowercase
 
-from genetic import Individual
+from genetic import Individual, Number
 
 
 class String(Individual):
@@ -9,6 +9,8 @@ class String(Individual):
 
     def __init__(self, name):
         self.name = name
+        self.maxi = 22
+        self.floor = 0
 
     def mutate(self):
         if random() < 0.1:
@@ -19,11 +21,11 @@ class String(Individual):
                 ]
             )
 
-    def rate(self) -> int:
+    def _rate(self) -> Number:
         return sum([1 for l, o in zip(self.name, self.goal) if l == o])
 
     def __repr__(self):
-        return f"{''.join([(l.upper() if l == o else l) for l, o in zip(self.name, self.goal)])} -> {self.rate()}"
+        return f"{''.join([(l.upper() if l == o else l) for l, o in zip(self.name, self.goal)])} -> {self._rate()}"
 
     def clone(self) -> "Individual":
         return String(self.name)

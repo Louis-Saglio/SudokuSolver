@@ -6,12 +6,28 @@ from typing import Type, List, Iterable, Optional, Callable, Union
 import os
 
 
-class Individual:
-    mutation_probability: float = 0.01
-    mating_probability: float = 0.01
+Number = Union[float, int]
 
-    def rate(self) -> int:
+
+class Individual:
+    mutation_probability: float = 0.001
+    mating_probability: float = 0.01
+    floor: Number
+    maxi: Number
+
+    def _rate(self) -> Number:
         raise NotImplementedError
+
+    def normalized_rate(self) -> Number:
+        try:
+            floor = self.floor
+        except AttributeError:
+            raise NotImplementedError(f"{type(self).__name__} must implement abstract floor attribute")
+        try:
+            maxi = self.maxi
+        except AttributeError:
+            raise NotImplementedError(f"{type(self).__name__} must implement abstract maxi attribute")
+        return (self._rate() - floor) * 100 / (maxi - floor)
 
     def mutate(self):
         raise NotImplementedError
@@ -42,13 +58,10 @@ def mutate(population: Iterable[Individual]):
 
 
 def reproduce(population: Population) -> Population:
-    scores = [max(i.rate(), 1) ** 2 for i in population]
+    scores = [max(i.normalized_rate(), 1) ** 2 for i in population]
     new_pop_f = choices(population, scores, k=len(population))
     new_pop_m = choices(population, scores, k=len(population))
     return [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
-
-
-Number = Union[float, int]
 
 
 def run(
@@ -66,16 +79,17 @@ def run(
         try:
             mutate(population)
             population = reproduce(population)
-            scores = [i.rate() for i in population]
+            scores = [i.normalized_rate() for i in population]
             maxi, avg, mini = max(scores), mean(scores), min(scores)
-            print(f"\r{format(maxi, '<4')}\t{format(avg, '<4')}\t{format(mini, '<4')}", end="")
+            print(f"\r{format(maxi, '<4.2f')}\t{format(avg, '<4.2f')}\t{format(mini, '<4.2f')}", end="")
             if stop_condition(population, mini, avg, maxi):
                 break
         except KeyboardInterrupt:
             break
-        populations.append(population)
+        # populations.append(population)
     print()
-    print(sorted(population, key=lambda i: i.rate()))
+    # print(sorted(population, key=lambda i: i.rate()))
+    populations.append(population)
     return populations
 
 

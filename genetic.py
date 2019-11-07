@@ -58,7 +58,7 @@ def run(individual_class: Type[Individual], population_size, log: bool = False, 
     population_history = [population]
 
     if log:
-        print("max ", "avg ", "min ", "mut-pr", "g-nbr", sep="\t")
+        print("max ", "avg ", "min ", "mut-pr", "mat-pr", "g-nbr", sep="\t")
 
     generation_count = 0
     keep_running = True
@@ -82,17 +82,19 @@ def run(individual_class: Type[Individual], population_size, log: bool = False, 
             population = [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
 
             if log:
-                maxi, avg, mini, mean_mutation_probability = (
+                maxi, avg, mini, mean_mut_prob, mean_mat_prob = (
                     max(scores),
                     mean(scores),
                     min(scores),
                     mean([i.mutation_probability for i in population]),
+                    mean([i.mating_probability for i in population]),
                 )
                 print(
                     f"\r{format(maxi, '<4.2f')}\t"
                     f"{format(avg, '<4.2f')}\t"
                     f"{format(mini, '<4.2f')}\t"
-                    f"{format(mean_mutation_probability, '<4.4f')}\t"
+                    f"{format(mean_mut_prob, '<4.4f')}\t"
+                    f"{format(mean_mat_prob, '<4.4f')}\t"
                     f"{generation_count}",
                     end="",
                 )

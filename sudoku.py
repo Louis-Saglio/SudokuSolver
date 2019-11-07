@@ -41,18 +41,29 @@ class Cell:
 
 
 class Sudoku(Individual):
-    mutation_probability = 1
-    floor = 27
-    maxi = 241
+    mutation_probability = 0.3
+    mating_probability = 0.1
+    floor = 9 * 1 + 9 * 1 + 9 * 1 + 9 * 0
+    maxi = 9 * 9 + 9 * 9 + 9 * 9 + 9 * 1
 
     def clone(self) -> "Individual":
         new = Sudoku(self.given_cells)
         new.cells = {cell.copy() for cell in self.cells}
         new.mutation_probability = self.mutation_probability
+        new.mating_probability = self.mating_probability
         return new
 
-    def mate(self, other: "Individual") -> "Individual":
-        return self.clone()
+    def mate(self, other: "Sudoku") -> "Individual":
+        crossover_type = choice([0, 1])
+        index_where_to_split = randint(0, 7)
+        new = Sudoku(self.given_cells)
+        new.mutation_probability = choice((self.mutation_probability, other.mutation_probability))
+        new.mating_probability = choice((self.mating_probability, other.mating_probability))
+        new.cells = {
+            (f_cell.copy() if f_cell.position.coordinates[crossover_type] < index_where_to_split else m_cell.copy())
+            for f_cell, m_cell in zip(self.cells, other.cells)
+        }
+        return new
 
     def __init__(self, given_cells: Set[Cell]):
         self.given_cells = given_cells
@@ -74,10 +85,12 @@ class Sudoku(Individual):
 
     def _rate(self) -> Number:
         rows, columns, squares = {}, {}, {}
+        values_count = {}
         for cell in self.cells:
             row_key = cell.position.coordinates[0]
             column_key = cell.position.coordinates[1]
             square_key = (cell.position.coordinates[0] % 3, cell.position.coordinates[1] % 3)
+            value_key = cell.value
             if row_key not in rows:
                 rows[row_key] = set()
             rows[row_key].add(cell.value)
@@ -87,10 +100,14 @@ class Sudoku(Individual):
             if square_key not in squares:
                 squares[square_key] = set()
             squares[square_key].add(cell.value)
+            if value_key not in values_count:
+                values_count[value_key] = 0
+            values_count[value_key] += 1
         return (
             sum([len(it) for it in rows.values()])
             + sum([len(it) for it in columns.values()])
             + sum([len(it) for it in squares.values()])
+            + sum([{9: 1, 8: 0.5, 7: 0.25}.get(value, 0) for value in values_count.values()])
         )
 
     def mutate(self):
@@ -99,11 +116,13 @@ class Sudoku(Individual):
             cell_to_mutate.value = randint(1, 9)
         if random() < self.mutation_probability:
             self.mutation_probability = random()
+        if random() < self.mutation_probability:
+            self.mating_probability = random()
 
     def __str__(self):
         cells: List[List[Union[int, str]]] = [[0 for __ in range(9)] for _ in range(9)]
         for cell in self.cells:
-            cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = cell.value
+            cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = cell.value or "-"
         for row in cells:
             row.insert(0, "|")
             row.insert(4, "|")

@@ -1,6 +1,6 @@
 from random import random, shuffle, choices
 from time import time
-from typing import Tuple, Optional, Set, List
+from typing import Tuple, Optional, Set, List, Union
 
 from genetic import Individual, Number
 
@@ -41,16 +41,20 @@ class Cell:
 
 
 class Grid(Individual):
+    mutation_probability = random()
+
     def clone(self) -> "Individual":
         new = Grid(self.given_cells)
         new.cells = {cell.copy() for cell in self.cells}
+        new.mutation_probability = self.mutation_probability
         return new
 
     def mate(self, other: "Individual") -> "Individual":
         return self.clone()
 
     def __init__(self, given_cells: Set[Cell]):
-        self.mutation_probability = 0.1
+        self.floor = 27
+        self.maxi = 241
         self.given_cells = given_cells
         self.cells: Set[Cell] = given_cells.copy()
         self.dimensions = (9, 9)
@@ -96,12 +100,23 @@ class Grid(Individual):
             cells = list(self.cells.difference(self.given_cells))
             cell1, cell2 = choices(cells, k=2)
             cell1.value, cell2.value = cell2.value, cell1.value
+        if random() < self.mutation_probability:
+            self.mutation_probability = random()
 
-    def __repr__(self):
-        cells = [[0 for __ in range(9)] for _ in range(9)]
+    def __str__(self):
+        cells: List[List[Union[int, str]]] = [[0 for __ in range(9)] for _ in range(9)]
         for cell in self.cells:
             cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = cell.value
-        cells = [" ".join([str(cell) for cell in row]) for row in cells]
+        for row in cells:
+            row.insert(0, "|")
+            row.insert(4, "|")
+            row.insert(8, "|")
+            row.insert(12, "|")
+        cells: List[Union[int, str]] = [" ".join([str(cell) for cell in row]) for row in cells]
+        cells.insert(0, "-" * 25)
+        cells.insert(4, "-" * 25)
+        cells.insert(8, "-" * 25)
+        cells.insert(12, "-" * 25)
         return "\n".join(cells)
 
 

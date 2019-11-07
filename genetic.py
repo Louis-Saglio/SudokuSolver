@@ -58,51 +58,67 @@ def mutate(population: Iterable[Individual]):
 
 
 def reproduce(population: Population) -> Population:
-    scores = [max(i.normalized_rate(), 1) ** 2 for i in population]
+    scores = [max(i.normalized_rate(), 1) ** 10 for i in population]
     new_pop_f = choices(population, scores, k=len(population))
     new_pop_m = choices(population, scores, k=len(population))
     return [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
 
 
-def run(
-    individual_class: Type[Individual],
-    population_size,
-    stop_condition: Callable[[Population, Number, Number, Number], bool],
-    *args,
-    **kwargs,
-):
-    populations = []
+def run(individual_class: Type[Individual], population_size, log_state: bool = False, *args, **kwargs):
     population = init_population(individual_class, population_size, *args, **kwargs)
-    populations.append(population)
-    print("max ", "avg ", "min ", sep="\t")
-    while True:
+    population_history = [population]
+
+    if log_state:
+        print("max ", "avg ", "min ", sep="\t")
+
+    keep_running = True
+    while keep_running:
         try:
             mutate(population)
             population = reproduce(population)
-            scores = [i.normalized_rate() for i in population]
-            maxi, avg, mini = max(scores), mean(scores), min(scores)
-            print(f"\r{format(maxi, '<4.2f')}\t{format(avg, '<4.2f')}\t{format(mini, '<4.2f')}", end="")
-            if stop_condition(population, mini, avg, maxi):
-                break
+
+            scores = []
+            for individual in population:
+                score = individual.normalized_rate()
+                scores.append(score)
+                if score == 100:
+                    keep_running = False
+
+            if log_state:
+                maxi, avg, mini = max(scores), mean(scores), min(scores)
+                print(f"\r{format(maxi, '<4.2f')}\t{format(avg, '<4.2f')}\t{format(mini, '<4.2f')}", end="")
+
         except KeyboardInterrupt:
-            break
-        # populations.append(population)
-    print()
-    # print(sorted(population, key=lambda i: i.rate()))
-    populations.append(population)
-    return populations
+            keep_running = False
+
+        # todo : un comment the following line to enable saving all population history to disk.
+        #  unfortunately, this functionality quickly eat all the RAM and need to be re-thought
+        # population_history.append(population)
+    population_history.append(population)  # For now, only add the latest generation to history
+
+    return population_history
 
 
 def save_population_to_file(populations: List[Population], file_path: Optional[str] = None) -> None:
     if file_path is None:
         directory_name = "data"
+
+        # Check that the data directory is free
         if not os.path.exists(directory_name):
             os.makedirs(directory_name)
         elif not os.path.isdir(directory_name):
             raise RuntimeError("./data is not a directory")
-        file_path = os.path.join(directory_name, f"saved_population_history_{datetime.now()}")
+
+        # Compute a nice file name
+        file_path = os.path.join(
+            directory_name,
+            f"{type(populations[0]).__name__.lower()}"
+            f"_{mean([i.normalized_rate() for i in populations[-1]])}_{datetime.now()}".replace(" ", "_"),
+        )
+
     with open(file_path, "wb") as f:
         pickle.dump(populations, f)
+
     print(
         f"population saved into {os.path.abspath(file_path)}"
         f" File size : {human_readable_size(os.path.getsize(file_path))}"

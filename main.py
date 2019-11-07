@@ -3,6 +3,7 @@ from sudoku import Grid, Cell
 
 
 def main():
+    # <editor-fold desc="given cells">
     given_cells = Cell.build(
         (1, 0, 2),
         (3, 0, 1),
@@ -40,10 +41,13 @@ def main():
         (5, 8, 7),
         (7, 8, 8),
     )
-    population = run(Grid, 1000, lambda *args: False, given_cells=given_cells)[0]
-    save_population_to_file(population)
-    print("Best solution :")
-    print(sorted(population, key=lambda i: i.normalized_rate())[-1])
+    # </editor-fold>
+    populations = run(individual_class=Grid, population_size=50, log_state=True, given_cells=given_cells)
+    save_population_to_file(populations)
+
+    # Report
+    print("Best solution of last population:")
+    print(sorted(populations[-1], key=lambda i: i.normalized_rate())[-1])
 
 
 if __name__ == "__main__":

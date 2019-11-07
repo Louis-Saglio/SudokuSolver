@@ -2,6 +2,7 @@ import pickle
 from datetime import datetime
 from random import choices, random
 from statistics import mean
+from time import time
 from typing import Type, List, Iterable, Optional, Callable, Union
 import os
 
@@ -69,9 +70,11 @@ def run(individual_class: Type[Individual], population_size, log_state: bool = F
     population_history = [population]
 
     if log_state:
-        print("max ", "avg ", "min ", sep="\t")
+        print("max ", "avg ", "min ", "g-nbr", sep="\t")
 
+    generation_count = 0
     keep_running = True
+    start = time()
     while keep_running:
         try:
             mutate(population)
@@ -86,17 +89,28 @@ def run(individual_class: Type[Individual], population_size, log_state: bool = F
 
             if log_state:
                 maxi, avg, mini = max(scores), mean(scores), min(scores)
-                print(f"\r{format(maxi, '<4.2f')}\t{format(avg, '<4.2f')}\t{format(mini, '<4.2f')}", end="")
+                print(
+                    f"\r{format(maxi, '<4.2f')}\t{format(avg, '<4.2f')}\t{format(mini, '<4.2f')}\t{generation_count}",
+                    end="",
+                )
 
         except KeyboardInterrupt:
             keep_running = False
 
+        generation_count += 1
+
         # todo : un comment the following line to enable saving all population history to disk.
         #  unfortunately, this functionality quickly eat all the RAM and need to be re-thought
         # population_history.append(population)
+
     population_history.append(population)  # For now, only add the latest generation to history
 
-    return population_history
+    if log_state:
+        time_per_generation = (time() - start) * 1000 / generation_count
+        print(f"\n{round(time_per_generation, 2)} ms / generation")
+        print(f"{round(time_per_generation / population_size, 2)} ms / individual")
+
+    return {"population_history": population_history, "generation_count": generation_count}
 
 
 def save_population_to_file(populations: List[Population], file_path: Optional[str] = None) -> None:

@@ -1,5 +1,5 @@
 from genetic import run, save_population_to_file
-from sudoku import Grid, Cell
+from sudoku import Sudoku, Cell
 
 
 def main():
@@ -42,12 +42,13 @@ def main():
         (7, 8, 8),
     )
     # </editor-fold>
-    populations = run(individual_class=Grid, population_size=50, log_state=True, given_cells=given_cells)
-    save_population_to_file(populations)
+    output = run(individual_class=Sudoku, population_size=1000, log_state=True, given_cells=given_cells)
+    save_population_to_file(output["population_history"])
 
     # Report
+    print(f"generation number: {output['generation_count']}")
     print("Best solution of last population:")
-    print(sorted(populations[-1], key=lambda i: i.normalized_rate())[-1])
+    print(sorted(output["population_history"][-1], key=lambda i: i.normalized_rate())[-1])
 
 
 if __name__ == "__main__":

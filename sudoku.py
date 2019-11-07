@@ -1,4 +1,4 @@
-from random import random, shuffle, choices
+from random import random, shuffle, choices, choice, randint
 from time import time
 from typing import Tuple, Optional, Set, List, Union
 
@@ -40,11 +40,13 @@ class Cell:
         return Cell(self.position, self.value)
 
 
-class Grid(Individual):
-    mutation_probability = random()
+class Sudoku(Individual):
+    mutation_probability = 1
+    floor = 27
+    maxi = 241
 
     def clone(self) -> "Individual":
-        new = Grid(self.given_cells)
+        new = Sudoku(self.given_cells)
         new.cells = {cell.copy() for cell in self.cells}
         new.mutation_probability = self.mutation_probability
         return new
@@ -53,8 +55,6 @@ class Grid(Individual):
         return self.clone()
 
     def __init__(self, given_cells: Set[Cell]):
-        self.floor = 27
-        self.maxi = 241
         self.given_cells = given_cells
         self.cells: Set[Cell] = given_cells.copy()
         self.dimensions = (9, 9)
@@ -97,9 +97,8 @@ class Grid(Individual):
 
     def mutate(self):
         if random() < self.mutation_probability:
-            cells = list(self.cells.difference(self.given_cells))
-            cell1, cell2 = choices(cells, k=2)
-            cell1.value, cell2.value = cell2.value, cell1.value
+            cell_to_mutate: Cell = choice(list(self.cells))
+            cell_to_mutate.value = randint(1, 9)
         if random() < self.mutation_probability:
             self.mutation_probability = random()
 
@@ -122,7 +121,7 @@ class Grid(Individual):
 
 if __name__ == "__main__":
     start = time()
-    grid = Grid({Cell(Position((3, 5)), 8)})
+    grid = Sudoku({Cell(Position((3, 5)), 8)})
     grid.randomly_fill()
     print(grid.normalized_rate())
     print("\n".join([str(it) for it in grid.cells]))

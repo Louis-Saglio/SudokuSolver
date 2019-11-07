@@ -42,7 +42,7 @@ def main():
         (7, 8, 8),
     )
     # </editor-fold>
-    output = run(individual_class=Sudoku, population_size=1000, log_state=True, given_cells=given_cells)
+    output = run(individual_class=Sudoku, population_size=50, log=False, given_cells=given_cells)
     save_population_to_file(output["population_history"])
 
     # Report

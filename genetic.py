@@ -1,18 +1,18 @@
+import os
 import pickle
 from datetime import datetime
+from multiprocessing import Queue
 from random import choices, random
 from statistics import mean
 from time import time
-from typing import Type, List, Iterable, Optional, Callable, Union
-import os
-
+from typing import Type, List, Optional, Union
 
 Number = Union[float, int]
 
 
 class Individual:
-    mutation_probability: float = 0.001
-    mating_probability: float = 0.01
+    mutation_probability: float = 1
+    mating_probability: float = 1
     floor: Number
     maxi: Number
 
@@ -53,44 +53,47 @@ def init_population(individual_type: Type[Individual], pop_size: int, *args, **k
     return [individual_type(*args, **kwargs) for _ in range(pop_size)]
 
 
-def mutate(population: Iterable[Individual]):
-    for individual in population:
-        individual.mutate()
-
-
-def reproduce(population: Population) -> Population:
-    scores = [max(i.normalized_rate(), 1) ** 10 for i in population]
-    new_pop_f = choices(population, scores, k=len(population))
-    new_pop_m = choices(population, scores, k=len(population))
-    return [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
-
-
-def run(individual_class: Type[Individual], population_size, log_state: bool = False, *args, **kwargs):
+def run(individual_class: Type[Individual], population_size, log: bool = False, *args, **kwargs):
     population = init_population(individual_class, population_size, *args, **kwargs)
     population_history = [population]
 
-    if log_state:
-        print("max ", "avg ", "min ", "g-nbr", sep="\t")
+    if log:
+        print("max ", "avg ", "min ", "mut-pr", "g-nbr", sep="\t")
 
     generation_count = 0
     keep_running = True
     start = time()
     while keep_running:
         try:
-            mutate(population)
-            population = reproduce(population)
-
             scores = []
             for individual in population:
+                individual.mutate()
+
                 score = individual.normalized_rate()
                 scores.append(score)
+
                 if score == 100:
                     keep_running = False
 
-            if log_state:
-                maxi, avg, mini = max(scores), mean(scores), min(scores)
+            # Reproduce
+            biased_scores = [score ** 10 for score in scores]
+            new_pop_f = choices(population, biased_scores, k=population_size)
+            new_pop_m = choices(population, biased_scores, k=population_size)
+            population = [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
+
+            if log:
+                maxi, avg, mini, mean_mutation_probability = (
+                    max(scores),
+                    mean(scores),
+                    min(scores),
+                    mean([i.mutation_probability for i in population]),
+                )
                 print(
-                    f"\r{format(maxi, '<4.2f')}\t{format(avg, '<4.2f')}\t{format(mini, '<4.2f')}\t{generation_count}",
+                    f"\r{format(maxi, '<4.2f')}\t"
+                    f"{format(avg, '<4.2f')}\t"
+                    f"{format(mini, '<4.2f')}\t"
+                    f"{format(mean_mutation_probability, '<4.4f')}\t"
+                    f"{generation_count}",
                     end="",
                 )
 
@@ -105,12 +108,16 @@ def run(individual_class: Type[Individual], population_size, log_state: bool = F
 
     population_history.append(population)  # For now, only add the latest generation to history
 
-    if log_state:
+    if log:
         time_per_generation = (time() - start) * 1000 / generation_count
         print(f"\n{round(time_per_generation, 2)} ms / generation")
         print(f"{round(time_per_generation / population_size, 2)} ms / individual")
 
     return {"population_history": population_history, "generation_count": generation_count}
+
+
+def train_population(population: Population, queue: Queue, stop_when_no_improvements_during: int = 1000):
+    pass
 
 
 def save_population_to_file(populations: List[Population], file_path: Optional[str] = None) -> None:

@@ -65,8 +65,6 @@ class Sudoku(Individual):
                     self.cells.add(Cell(Position((i, j)), None))
         assert len(self.cells) == 81
         self.randomly_fill()
-        # print(self)
-        # exit()
 
     def randomly_fill(self):
         values = build_random_valid_sudoku_values([i.value for i in self.given_cells])

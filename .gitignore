@@ -1,0 +1,17 @@
+venv
+.idea
+__pycache__
+data
+Supprimerait .gitignore
+Supprimerait .idea/$CACHE_FILE$
+Supprimerait .idea/.gitignore
+Supprimerait .idea/SudokuSolver.iml
+Supprimerait .idea/dictionaries/
+Supprimerait .idea/inspectionProfiles/
+Supprimerait .idea/misc.xml
+Supprimerait .idea/modules.xml
+Supprimerait .idea/vcs.xml
+Supprimerait __pycache__/
+Supprimerait data/
+Supprimerait graph.py
+Supprimerait requirements.txt

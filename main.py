@@ -1,4 +1,5 @@
 from genetic import run, save_population_to_file
+from graph import UI
 from sudoku import Sudoku, Cell
 
 
@@ -49,6 +50,10 @@ def main():
     print(f"generation number: {output['generation_count']}")
     print("Best solution of last population:")
     print(sorted(output["population_history"][-1], key=lambda i: i.normalized_rate())[-1])
+
+    # Graph
+    ui = UI('Sodoku')
+    ui.show()
 
 
 if __name__ == "__main__":

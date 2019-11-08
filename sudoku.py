@@ -39,12 +39,18 @@ class Cell:
     def copy(self) -> "Cell":
         return Cell(self.position, self.value)
 
+    def __hash__(self):
+        return hash(self.position.coordinates)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
 
 class Sudoku(Individual):
-    mutation_probability = 0.3
-    mating_probability = 0.1
-    floor = 9 * 1 + 9 * 1 + 9 * 1 + 9 * 0
-    maxi = 9 * 9 + 9 * 9 + 9 * 9 + 9 * 1
+    mutation_probability = 0.02
+    mating_probability = 0.5
+    floor = (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 0) ** 2
+    maxi = (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 1) ** 2
 
     def clone(self) -> "Individual":
         new = Sudoku(self.given_cells)
@@ -104,20 +110,22 @@ class Sudoku(Individual):
                 values_count[value_key] = 0
             values_count[value_key] += 1
         return (
-            sum([len(it) for it in rows.values()])
-            + sum([len(it) for it in columns.values()])
-            + sum([len(it) for it in squares.values()])
-            + sum([{9: 1, 8: 0.5, 7: 0.25}.get(value, 0) for value in values_count.values()])
+            sum([len(it) for it in rows.values()]) ** 2
+            + sum([len(it) for it in columns.values()]) ** 2
+            + sum([len(it) for it in squares.values()]) ** 2
+            + sum([{9: 1, 8: 0.5, 7: 0.25}.get(value, 0) for value in values_count.values()]) ** 2
         )
 
     def mutate(self):
-        if random() < self.mutation_probability:
-            cell_to_mutate: Cell = choice(list(self.cells))
-            cell_to_mutate.value = randint(1, 9)
-        if random() < self.mutation_probability:
-            self.mutation_probability = random()
-        if random() < self.mutation_probability:
-            self.mating_probability = random()
+        for cell_to_mutate in self.cells - self.given_cells:
+            if random() < self.mutation_probability:
+                assert cell_to_mutate not in self.given_cells
+                cell_to_mutate.value = randint(1, 9)
+        # if random() < self.mutation_probability:
+        #     self.mutation_probability = random()
+        #     self.mutation_probability *= choice([0.99, 1.01])
+        # if random() < self.mutation_probability:
+        #     self.mating_probability = random()
 
     def __str__(self):
         cells: List[List[Union[int, str]]] = [[0 for __ in range(9)] for _ in range(9)]

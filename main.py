@@ -1,4 +1,4 @@
-from genetic import run, save_population_to_file
+from genetic import run, save_population_to_file, save_statistics_to_file
 from sudoku import Sudoku, Cell
 
 
@@ -42,8 +42,9 @@ def main():
         (7, 8, 8),
     )
     # </editor-fold>
-    output = run(individual_class=Sudoku, population_size=1000, log=True, given_cells=given_cells)
+    output = run(individual_class=Sudoku, population_size=200, log=True, display_best=False, given_cells=given_cells)
     save_population_to_file(output["population_history"])
+    save_statistics_to_file(output["statistics"])
 
     # Report
     print(f"generation number: {output['generation_count']}")

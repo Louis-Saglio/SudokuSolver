@@ -1,19 +1,8 @@
-from random import random, shuffle, choices, choice, randint
+from random import random, shuffle, choice, randint
 from time import time
 from typing import Tuple, Optional, Set, List, Union
 
 from genetic import Individual, Number
-
-
-def build_random_valid_sudoku_values(given_values: List[int]) -> List[int]:
-    numbers = []
-    for _ in range(9):
-        for i in range(1, 10):
-            if i in given_values:
-                given_values.remove(i)
-            else:
-                numbers.append(i)
-    return numbers
 
 
 class Position:
@@ -47,10 +36,60 @@ class Cell:
 
 
 class Sudoku(Individual):
-    mutation_probability = 0.003
+    mutation_probability = 0.02
+    # mutation_probability = 0.003
     mating_probability = 0.5
-    floor = (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 0) ** 2
-    maxi = (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 1) ** 2
+
+    def __init__(self, given_cells: Set[Cell]):
+        self.width = 6
+        self.height = self.width
+        self.square_width = 3
+        self.square_height = 2
+        self.value_number = max(self.width, self.height)
+        assert self.width % self.square_width == 0
+        assert self.height % self.square_height == 0
+        assert self.square_width * self.square_height == self.width
+
+        self.floor = (
+            (1 * self.width) ** 2
+            + (1 * self.height) ** 2
+            + (1 * self.square_width * self.square_height) ** 2
+            + (0 * self.value_number) ** 2
+        )
+        self.maxi = (
+            (self.value_number * self.width) ** 2
+            + (self.value_number * self.height) ** 2
+            + (self.value_number * self.square_width * self.square_height) ** 2
+            + (1 * self.value_number) ** 2
+        )
+
+        self.given_cells = given_cells
+        self.cells: Set[Cell] = given_cells.copy()
+        coordinates = set()
+        for given_cell in given_cells:
+            coordinates.add(given_cell.position.coordinates)
+            assert 0 <= given_cell.position.coordinates[0] < self.width
+            assert 0 <= given_cell.position.coordinates[1] < self.height
+
+        for i in range(self.width):
+            for j in range(self.height):
+                if (i, j) not in coordinates:
+                    self.cells.add(Cell(Position((i, j)), None))
+
+        assert len(self.cells) == self.width * self.height
+        # self.randomly_fill()
+
+    def build_random_valid_sudoku_values(self, given_values: List[int]) -> List[int]:
+        numbers = []
+        max_value = max(self.width, self.height)
+        min_value = min(self.width, self.height)
+        for _ in range(min_value):
+            for i in range(1, max_value + 1):
+                if i in given_values:
+                    given_values.remove(i)
+                else:
+                    numbers.append(i)
+        return numbers
 
     def clone(self) -> "Individual":
         new = Sudoku(self.given_cells)
@@ -61,7 +100,7 @@ class Sudoku(Individual):
 
     def mate(self, other: "Sudoku") -> "Individual":
         crossover_type = choice([0, 1])
-        index_where_to_split = randint(0, 7)
+        index_where_to_split = randint(0, self.width - 2) if crossover_type == 1 else randint(0, self.height - 2)
         new = Sudoku(self.given_cells)
         new.mutation_probability = choice((self.mutation_probability, other.mutation_probability))
         new.mating_probability = choice((self.mating_probability, other.mating_probability))
@@ -71,20 +110,8 @@ class Sudoku(Individual):
         }
         return new
 
-    def __init__(self, given_cells: Set[Cell]):
-        self.given_cells = given_cells
-        self.cells: Set[Cell] = given_cells.copy()
-        self.dimensions = (9, 9)
-        coordinates = {it.position.coordinates for it in self.given_cells}
-        for i in range(self.dimensions[0]):
-            for j in range(self.dimensions[1]):
-                if (i, j) not in coordinates:
-                    self.cells.add(Cell(Position((i, j)), None))
-        assert len(self.cells) == 81
-        self.randomly_fill()
-
     def randomly_fill(self):
-        values = build_random_valid_sudoku_values([i.value for i in self.given_cells])
+        values = self.build_random_valid_sudoku_values([i.value for i in self.given_cells])
         shuffle(values)
         for cell, value in zip(self.cells.difference(self.given_cells), values):
             cell.value = value
@@ -113,14 +140,20 @@ class Sudoku(Individual):
             sum([len(it) for it in rows.values()]) ** 2
             + sum([len(it) for it in columns.values()]) ** 2
             + sum([len(it) for it in squares.values()]) ** 2
-            + sum([{9: 1, 8: 0.5, 7: 0.25}.get(value, 0) for value in values_count.values()]) ** 2
+            + sum(
+                [
+                    {self.value_number: 1, self.value_number - 1: 0.5, self.value_number - 2: 0.25}.get(value, 0)
+                    for value in values_count.values()
+                ]
+            )
+            ** 2
         )
 
     def mutate(self):
         for cell_to_mutate in self.cells - self.given_cells:
             if random() < self.mutation_probability:
                 assert cell_to_mutate not in self.given_cells
-                cell_to_mutate.value = randint(1, 9)
+                cell_to_mutate.value = randint(1, self.value_number)
         # if random() < self.mutation_probability:
         #     self.mutation_probability = random()
         #     self.mutation_probability *= choice([0.99, 1.01])
@@ -128,19 +161,21 @@ class Sudoku(Individual):
         #     self.mating_probability = random()
 
     def __str__(self):
-        cells: List[List[Union[int, str]]] = [[0 for __ in range(9)] for _ in range(9)]
-        for cell in self.cells:
-            cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = cell.value or "-"
+        letters = {i + 1: letter for i, letter in enumerate("abcdefghijklmnopqrstuvwxyz")}
+        letters[None] = "-"
+        cells: List[List[Union[int, str]]] = [[0 for __ in range(self.width)] for _ in range(self.height)]
+        for cell in self.cells - self.given_cells:
+            cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = letters[cell.value]
+        for given_cell in self.given_cells:
+            cells[given_cell.position.coordinates[1]][given_cell.position.coordinates[0]] = letters[
+                given_cell.value
+            ].upper()
         for row in cells:
-            row.insert(0, "|")
-            row.insert(4, "|")
-            row.insert(8, "|")
-            row.insert(12, "|")
+            for i in range(self.width // self.square_width + 1):
+                row.insert(self.square_width * i + i, "|")
         cells: List[Union[int, str]] = [" ".join([str(cell) for cell in row]) for row in cells]
-        cells.insert(0, "-" * 25)
-        cells.insert(4, "-" * 25)
-        cells.insert(8, "-" * 25)
-        cells.insert(12, "-" * 25)
+        for i in range(self.height // self.square_height + 1):
+            cells.insert(self.square_height * i + i, "-" * (1 + self.width * 2 + (self.width // self.square_width) * 2))
         return "\n".join(cells)
 
 

@@ -237,3 +237,5 @@ impossible_521901 = Cell.build(
     (8, 4, 7),
     (8, 6, 8),
 )
+
+empty = set()

@@ -4,8 +4,8 @@ from sudoku import Sudoku
 
 
 def main():
-    given_cells = impossible_521901
-    output = run(individual_class=Sudoku, population_size=1000, log=True, display_best=False, given_cells=given_cells)
+    given_cells = empty
+    output = run(individual_class=Sudoku, population_size=50, log=True, display_best=False, given_cells=given_cells)
     save_population_to_file(output["population_history"])
     save_statistics_to_file(output["statistics"])
 

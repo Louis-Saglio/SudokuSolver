@@ -47,7 +47,7 @@ class Cell:
 
 
 class Sudoku(Individual):
-    mutation_probability = 0.02
+    mutation_probability = 0.003
     mating_probability = 0.5
     floor = (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 0) ** 2
     maxi = (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 1) ** 2
@@ -75,7 +75,7 @@ class Sudoku(Individual):
         self.given_cells = given_cells
         self.cells: Set[Cell] = given_cells.copy()
         self.dimensions = (9, 9)
-        coordinates = {it.position.coordinates: it for it in self.given_cells}
+        coordinates = {it.position.coordinates for it in self.given_cells}
         for i in range(self.dimensions[0]):
             for j in range(self.dimensions[1]):
                 if (i, j) not in coordinates:

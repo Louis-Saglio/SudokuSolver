@@ -67,9 +67,9 @@ def run(
     start = time()
     data = []
     best_individual = None
+    best_score = 0
     while keep_running:
         try:
-            best_score = 0
             scores = []
             for individual in population:
 

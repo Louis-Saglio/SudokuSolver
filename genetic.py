@@ -113,7 +113,7 @@ def run(individual_class: Type[Individual], population_size, log_state: bool = F
     return {"population_history": population_history, "generation_count": generation_count}
 
 
-def save_population_to_file(populations: List[Population], file_path: Optional[str] = None) -> None:
+def save_population_to_file(populations: List[Population], file_path: Optional[str] = None) -> str:
     if file_path is None:
         directory_name = "data"
 
@@ -137,6 +137,7 @@ def save_population_to_file(populations: List[Population], file_path: Optional[s
         f"population saved into {os.path.abspath(file_path)}"
         f" File size : {human_readable_size(os.path.getsize(file_path))}"
     )
+    return file_path
 
 
 def human_readable_size(size, precision=2):

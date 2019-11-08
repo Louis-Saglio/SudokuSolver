@@ -44,7 +44,7 @@ def main():
     )
     # </editor-fold>
     output = run(individual_class=Sudoku, population_size=1000, log_state=True, given_cells=given_cells)
-    save_population_to_file(output["population_history"])
+    file_path = save_population_to_file(output["population_history"])
 
     # Report
     print(f"generation number: {output['generation_count']}")
@@ -52,7 +52,8 @@ def main():
     print(sorted(output["population_history"][-1], key=lambda i: i.normalized_rate())[-1])
 
     # Graph
-    ui = UI('Sodoku')
+    config = {'populations_save': file_path, 'statics': ''}
+    ui = UI('Sodoku', config)
     ui.show()
 
 

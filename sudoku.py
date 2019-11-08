@@ -39,20 +39,37 @@ class Cell:
     def copy(self) -> "Cell":
         return Cell(self.position, self.value)
 
+    def __hash__(self):
+        return hash(self.position.coordinates)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
 
 class Sudoku(Individual):
-    mutation_probability = 1
-    floor = 27
-    maxi = 241
+    mutation_probability = 0.02
+    mating_probability = 0.5
+    floor = (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 0) ** 2
+    maxi = (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 1) ** 2
 
     def clone(self) -> "Individual":
         new = Sudoku(self.given_cells)
         new.cells = {cell.copy() for cell in self.cells}
         new.mutation_probability = self.mutation_probability
+        new.mating_probability = self.mating_probability
         return new
 
-    def mate(self, other: "Individual") -> "Individual":
-        return self.clone()
+    def mate(self, other: "Sudoku") -> "Individual":
+        crossover_type = choice([0, 1])
+        index_where_to_split = randint(0, 7)
+        new = Sudoku(self.given_cells)
+        new.mutation_probability = choice((self.mutation_probability, other.mutation_probability))
+        new.mating_probability = choice((self.mating_probability, other.mating_probability))
+        new.cells = {
+            (f_cell.copy() if f_cell.position.coordinates[crossover_type] < index_where_to_split else m_cell.copy())
+            for f_cell, m_cell in zip(self.cells, other.cells)
+        }
+        return new
 
     def __init__(self, given_cells: Set[Cell]):
         self.given_cells = given_cells
@@ -65,8 +82,6 @@ class Sudoku(Individual):
                     self.cells.add(Cell(Position((i, j)), None))
         assert len(self.cells) == 81
         self.randomly_fill()
-        # print(self)
-        # exit()
 
     def randomly_fill(self):
         values = build_random_valid_sudoku_values([i.value for i in self.given_cells])
@@ -76,10 +91,12 @@ class Sudoku(Individual):
 
     def _rate(self) -> Number:
         rows, columns, squares = {}, {}, {}
+        values_count = {}
         for cell in self.cells:
             row_key = cell.position.coordinates[0]
             column_key = cell.position.coordinates[1]
             square_key = (cell.position.coordinates[0] % 3, cell.position.coordinates[1] % 3)
+            value_key = cell.value
             if row_key not in rows:
                 rows[row_key] = set()
             rows[row_key].add(cell.value)
@@ -89,23 +106,31 @@ class Sudoku(Individual):
             if square_key not in squares:
                 squares[square_key] = set()
             squares[square_key].add(cell.value)
+            if value_key not in values_count:
+                values_count[value_key] = 0
+            values_count[value_key] += 1
         return (
-            sum([len(it) for it in rows.values()])
-            + sum([len(it) for it in columns.values()])
-            + sum([len(it) for it in squares.values()])
+            sum([len(it) for it in rows.values()]) ** 2
+            + sum([len(it) for it in columns.values()]) ** 2
+            + sum([len(it) for it in squares.values()]) ** 2
+            + sum([{9: 1, 8: 0.5, 7: 0.25}.get(value, 0) for value in values_count.values()]) ** 2
         )
 
     def mutate(self):
-        if random() < self.mutation_probability:
-            cell_to_mutate: Cell = choice(list(self.cells))
-            cell_to_mutate.value = randint(1, 9)
-        if random() < self.mutation_probability:
-            self.mutation_probability = random()
+        for cell_to_mutate in self.cells - self.given_cells:
+            if random() < self.mutation_probability:
+                assert cell_to_mutate not in self.given_cells
+                cell_to_mutate.value = randint(1, 9)
+        # if random() < self.mutation_probability:
+        #     self.mutation_probability = random()
+        #     self.mutation_probability *= choice([0.99, 1.01])
+        # if random() < self.mutation_probability:
+        #     self.mating_probability = random()
 
     def __str__(self):
         cells: List[List[Union[int, str]]] = [[0 for __ in range(9)] for _ in range(9)]
         for cell in self.cells:
-            cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = cell.value
+            cells[cell.position.coordinates[1]][cell.position.coordinates[0]] = cell.value or "-"
         for row in cells:
             row.insert(0, "|")
             row.insert(4, "|")

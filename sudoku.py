@@ -47,8 +47,8 @@ class Cell:
 
 
 class Sudoku(Individual):
-    mutation_probability = 0.03
-    mating_probability = 1
+    mutation_probability = 0.02
+    mating_probability = 0.5
     floor = (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 0) ** 2
     maxi = (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 1) ** 2
 

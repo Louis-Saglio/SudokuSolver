@@ -66,13 +66,15 @@ def run(
     keep_running = True
     start = time()
     data = []
+    best_individual = None
     while keep_running:
         try:
             best_score = 0
-            best_individual = None
             scores = []
             for individual in population:
-                individual.mutate()
+
+                if individual is not best_individual:
+                    individual.mutate()
 
                 score = individual.normalized_rate()
                 scores.append(score)
@@ -89,6 +91,7 @@ def run(
             new_pop_f = choices(population, biased_scores, k=population_size - 1)
             new_pop_m = choices(population, biased_scores, k=population_size - 1)
             population = [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
+
             population.append(best_individual)
 
             if log:

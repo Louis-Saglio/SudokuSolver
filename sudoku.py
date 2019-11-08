@@ -47,10 +47,10 @@ class Cell:
 
 
 class Sudoku(Individual):
-    mutation_probability = 0.001
+    mutation_probability = 0.03
     mating_probability = 1
-    floor = (9 * 1) + (9 * 1) + (9 * 1) + (9 * 0)
-    maxi = (9 * 9) + (9 * 9) + (9 * 9) + (9 * 1)
+    floor = (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 1) ** 2 + (9 * 0) ** 2
+    maxi = (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 9) ** 2 + (9 * 1) ** 2
 
     def clone(self) -> "Individual":
         new = Sudoku(self.given_cells)
@@ -110,10 +110,10 @@ class Sudoku(Individual):
                 values_count[value_key] = 0
             values_count[value_key] += 1
         return (
-            sum([len(it) for it in rows.values()])
-            + sum([len(it) for it in columns.values()])
-            + sum([len(it) for it in squares.values()])
-            + sum([{9: 1, 8: 0.5, 7: 0.25}.get(value, 0) for value in values_count.values()])
+            sum([len(it) for it in rows.values()]) ** 2
+            + sum([len(it) for it in columns.values()]) ** 2
+            + sum([len(it) for it in squares.values()]) ** 2
+            + sum([{9: 1, 8: 0.5, 7: 0.25}.get(value, 0) for value in values_count.values()]) ** 2
         )
 
     def mutate(self):

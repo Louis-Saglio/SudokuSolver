@@ -77,7 +77,7 @@ class Sudoku(Individual):
                     self.cells.add(Cell(Position((i, j)), None))
 
         assert len(self.cells) == self.width * self.height
-        # self.randomly_fill()
+        self.randomly_fill()
 
     def build_random_valid_sudoku_values(self, given_values: List[int]) -> List[int]:
         numbers = []
@@ -122,7 +122,10 @@ class Sudoku(Individual):
         for cell in self.cells:
             row_key = cell.position.coordinates[0]
             column_key = cell.position.coordinates[1]
-            square_key = (cell.position.coordinates[0] % 3, cell.position.coordinates[1] % 3)
+            square_key = (
+                cell.position.coordinates[0] // self.square_width,
+                cell.position.coordinates[1] // self.square_height,
+            )
             value_key = cell.value
             if row_key not in rows:
                 rows[row_key] = set()

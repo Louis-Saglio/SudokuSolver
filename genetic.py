@@ -40,7 +40,7 @@ class Individual:
         raise NotImplementedError
 
     def reproduce(self, other: "Individual") -> "Individual":
-        if other is self or random() < self.mating_probability:
+        if other is self or random() > self.mating_probability:
             return self.clone()
         return self.mate(other)
 
@@ -131,6 +131,8 @@ def run(
     time_per_generation = (time() - start) * 1000 / generation_count
     print(f"\n{round(time_per_generation, 2)} ms / generation")
     print(f"{round(time_per_generation / population_size, 2)} ms / individual")
+    print(f"complexity : {population_size * generation_count}")
+    print(f"total time: {round(time() - start, 2)} seconds")
 
     return {"population_history": population_history, "generation_count": generation_count, "statistics": data}
 

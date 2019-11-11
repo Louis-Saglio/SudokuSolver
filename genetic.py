@@ -1,7 +1,6 @@
 import os
 import pickle
 from datetime import datetime
-from multiprocessing import Queue
 from random import choices, random
 from statistics import mean
 from time import time
@@ -48,97 +47,149 @@ class Individual:
 Population = List[Individual]
 
 
+class StatCollector:
+    total_sum = 0
+    values_number = 0
+    greatest = None
+    greatest_item = None
+    smallest = None
+    smallest_item = None
+
+    def collect(self, value: Number, item: Individual):
+        self.total_sum += value
+        if self.greatest is None or value > self.greatest:
+            self.greatest = value
+            self.greatest_item = item
+        if self.smallest is None or value < self.smallest:
+            self.smallest = value
+            self.smallest_item = item
+        self.values_number += 1
+
+    @property
+    def mean(self):
+        return self.total_sum / self.values_number
+
+
 def init_population(individual_type: Type[Individual], pop_size: int, *args, **kwargs) -> Population:
     # noinspection PyArgumentList
     return [individual_type(*args, **kwargs) for _ in range(pop_size)]
 
 
-def run(
-    individual_class: Type[Individual], population_size, log: bool = False, display_best: bool = False, *args, **kwargs
-):
-    population = init_population(individual_class, population_size, *args, **kwargs)
-    population_history = [population]
+class ExitReasons:
+    KEYBOARD_INTERRUPT = 0
+    SUCCESS = 1
+    BLOCKED = 2
 
-    if log:
-        print("max ", "avg ", "min ", "mut-pr", "mat-pr", "g-nbr", sep="\t")
 
-    generation_count = 0
-    keep_running = True
-    start = time()
-    data = []
-    best_individual = None
-    best_score = 0
-    while keep_running:
-        try:
-            scores = []
-            for individual in population:
+class GeneticEngine:
+    def __init__(
+        self, individual_class: Type[Individual], population_size, *individual_init_args, **individual_init_kwargs
+    ):
 
-                if individual is not best_individual:
-                    individual.mutate()
+        self.INDIVIDUAL_CLASS = individual_class
+        self.POPULATION_SIZE = population_size
+        self.INDIVIDUAL_INIT_ARGS = individual_init_args
+        self.INDIVIDUAL_INIT_KWARGS = individual_init_kwargs
 
-                score = individual.normalized_rate()
-                scores.append(score)
+    def init_population(self) -> Population:
+        # noinspection PyArgumentList
+        return [
+            self.INDIVIDUAL_CLASS(*self.INDIVIDUAL_INIT_ARGS, **self.INDIVIDUAL_INIT_KWARGS)
+            for _ in range(self.POPULATION_SIZE)
+        ]
 
-                if score > best_score:
-                    best_score = score
-                    best_individual = individual
+    def run_generation(self, population: Population, do_not_mutate: Optional[Individual]):
 
-                if score == 100:
-                    keep_running = False
+        score_stats = StatCollector()
+        mutation_probability_stats = StatCollector()
+        mating_probability_stats = StatCollector()
 
-            # Reproduce
-            biased_scores = [score ** 10 for score in scores]
-            new_pop_f = choices(population, biased_scores, k=population_size - 1)
-            new_pop_m = choices(population, biased_scores, k=population_size - 1)
-            population = [father.reproduce(mother) for father, mother in zip(new_pop_f, new_pop_m)]
+        scores = []
+        for individual in population:
 
-            population.append(best_individual)
+            if individual is not do_not_mutate:
+                individual.mutate()
 
-            if log:
-                maxi, avg, mini, mean_mut_prob, mean_mat_prob = (
-                    max(scores),
-                    mean(scores),
-                    min(scores),
-                    mean([i.mutation_probability for i in population]),
-                    mean([i.mating_probability for i in population]),
+            score = individual.normalized_rate()
+            scores.append(score)
+
+            score_stats.collect(score, individual)
+            mutation_probability_stats.collect(individual.mutation_probability, individual)
+            mating_probability_stats.collect(individual.mating_probability, individual)
+
+        biased_scores = [score ** 10 for score in scores]
+        for i, (father, mother) in enumerate(
+            zip(
+                choices(population, biased_scores, k=self.POPULATION_SIZE - 1),
+                choices(population, biased_scores, k=self.POPULATION_SIZE - 1),
+            )
+        ):
+            population[i] = father.reproduce(mother)
+
+        if do_not_mutate is not None:
+            population.append(do_not_mutate)
+
+        return score_stats, mutation_probability_stats, mating_probability_stats
+
+    def run_population(self):
+        population = self.init_population()
+
+        best_individual = None
+        all_time_best_score = None
+
+        no_progress_count = 0
+        generation_count = 0
+
+        keep_running = True
+        while keep_running:
+
+            try:
+                score_stats, mutation_probability_stats, mating_probability_stats = self.run_generation(
+                    population, do_not_mutate=best_individual
                 )
+                best_individual = score_stats.greatest_item
+
                 text = (
-                    f"{format(maxi, '<4.2f')}\t"
-                    f"{format(avg, '<4.2f')}\t"
-                    f"{format(mini, '<4.2f')}\t"
-                    f"{format(mean_mut_prob, '<4.4f')}\t"
-                    f"{format(mean_mat_prob, '<4.4f')}\t"
+                    f"{format(score_stats.greatest, '<4.2f')}\t"
+                    f"{format(score_stats.mean, '<4.2f')}\t"
+                    f"{format(score_stats.smallest, '<4.2f')}\t"
+                    f"{format(mutation_probability_stats.mean, '<4.4f')}\t"
+                    f"{format(mating_probability_stats.mean, '<4.4f')}\t"
                     f"{generation_count}"
                 )
-                print(f"\r{text}", end="", sep="")
-                data.append(text)
+                print(f"\r{text}", end="")
 
-            if display_best and generation_count % 10 == 0:
-                os.system("clear")
-                print(best_individual)
+                if all_time_best_score is None or score_stats.greatest > all_time_best_score:
+                    all_time_best_score = score_stats.greatest
+                    no_progress_count = 0
+                    if all_time_best_score >= 100:
+                        keep_running = False
+                        exit_reason = ExitReasons.SUCCESS
 
-        except KeyboardInterrupt:
-            keep_running = False
+                else:
+                    no_progress_count += 1
+                    if generation_count > 20 and no_progress_count == generation_count // 2:
+                        keep_running = False
+                        exit_reason = ExitReasons.BLOCKED
 
-        generation_count += 1
+                generation_count += 1
 
-        # todo : un comment the following line to enable saving all population history to disk.
-        #  unfortunately, this functionality quickly eat all the RAM and need to be re-thought
-        # population_history.append(population)
+            except KeyboardInterrupt:
+                keep_running = False
+                exit_reason = ExitReasons.KEYBOARD_INTERRUPT
 
-    population_history.append(population)  # For now, only add the latest generation to history
+        # noinspection PyUnboundLocalVariable
+        return score_stats.greatest, best_individual, exit_reason
 
-    time_per_generation = (time() - start) * 1000 / generation_count
-    print(f"\n{round(time_per_generation, 2)} ms / generation")
-    print(f"{round(time_per_generation / population_size, 2)} ms / individual")
-    print(f"complexity : {population_size * generation_count}")
-    print(f"total time: {round(time() - start, 2)} seconds")
-
-    return {"population_history": population_history, "generation_count": generation_count, "statistics": data}
-
-
-def train_population(population: Population, queue: Queue, stop_when_no_improvements_during: int = 1000):
-    pass
+    def run(self):
+        print("max ", "avg ", "min ", "mut-pr", "mat-pr", "g-nbr", sep="\t")
+        best_individual = None
+        keep_running = True
+        while keep_running:
+            best_score, best_individual, exit_reason = self.run_population()
+            if exit_reason != ExitReasons.BLOCKED:
+                keep_running = False
+        return best_individual
 
 
 def save_statistics_to_file(data: List[str]):

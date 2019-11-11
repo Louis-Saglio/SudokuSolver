@@ -36,7 +36,7 @@ class Cell:
 
 
 class Sudoku(Individual):
-    mutation_probability = 0.02
+    mutation_probability = 0.03
     # mutation_probability = 0.003
     mating_probability = 0.5
 

@@ -2,9 +2,7 @@ import os
 import pickle
 from datetime import datetime
 from random import choices, random
-from statistics import mean
-from time import time
-from typing import Type, List, Optional, Union
+from typing import Type, List, Optional, Union, Tuple
 
 Number = Union[float, int]
 
@@ -134,6 +132,8 @@ class GeneticEngine:
     def run_population(self):
         population = self.init_population()
 
+        population_score_stats = []
+
         best_individual = None
         all_time_best_score = None
 
@@ -159,6 +159,8 @@ class GeneticEngine:
                 )
                 print(f"\r{text}", end="")
 
+                population_score_stats.append((score_stats.greatest, score_stats.mean, score_stats.smallest))
+
                 if all_time_best_score is None or score_stats.greatest > all_time_best_score:
                     all_time_best_score = score_stats.greatest
                     no_progress_count = 0
@@ -179,41 +181,22 @@ class GeneticEngine:
                 exit_reason = ExitReasons.KEYBOARD_INTERRUPT
 
         # noinspection PyUnboundLocalVariable
-        return score_stats.greatest, best_individual, exit_reason
+        return best_individual, population_score_stats, exit_reason
 
     def run(self):
         print("max ", "avg ", "min ", "mut-pr", "mat-pr", "g-nbr", sep="\t")
         best_individual = None
+        stats = []
         keep_running = True
         while keep_running:
-            best_score, best_individual, exit_reason = self.run_population()
+            best_individual, population_stats, exit_reason = self.run_population()
+            stats.append(population_stats)
             if exit_reason != ExitReasons.BLOCKED:
                 keep_running = False
-        return best_individual
+        print("\n", end="")
+        return best_individual, stats
 
-
-def save_statistics_to_file(data: List[str]):
-    directory_name = "data"
-
-    # Check that the data directory is free
-    if not os.path.exists(directory_name):
-        os.makedirs(directory_name)
-    elif not os.path.isdir(directory_name):
-        raise RuntimeError("./data is not a directory")
-
-    # Compute a nice file name
-    file_path = os.path.join(directory_name, f"stats_{datetime.now()}".replace(" ", "_"))
-    with open(file_path, "w") as f:
-        f.write("\n".join(data))
-
-    print(
-        f"Statistics saved into {os.path.abspath(file_path)}"
-        f" File size : {human_readable_size(os.path.getsize(file_path))}"
-    )
-
-
-def save_population_to_file(populations: List[Population], file_path: Optional[str] = None) -> None:
-    if file_path is None:
+    def save_stats_to_file(self, data: List[List[Tuple[Number, Number, Number]]]) -> None:
         directory_name = "data"
 
         # Check that the data directory is free
@@ -224,25 +207,19 @@ def save_population_to_file(populations: List[Population], file_path: Optional[s
 
         # Compute a nice file name
         file_path = os.path.join(
-            directory_name,
-            f"{type(populations[0]).__name__.lower()}"
-            f"_{mean([round(i.normalized_rate(), 2) for i in populations[-1]])}_{datetime.now()}".replace(" ", "_"),
+            directory_name, f"_{self.INDIVIDUAL_CLASS.__name__.lower()}_{datetime.now()}".replace(" ", "_")
         )
 
-    with open(file_path, "wb") as f:
-        pickle.dump(populations, f)
+        with open(file_path, "wb") as f:
+            pickle.dump(data, f)
 
-    print(
-        f"population saved into {os.path.abspath(file_path)}"
-        f" File size : {human_readable_size(os.path.getsize(file_path))}"
-    )
+        # Source : https://stackoverflow.com/a/32009595/7629797
+        suffixes = ["B", "KB", "MB", "GB", "TB"]
+        suffix_index = 0
+        size = os.path.getsize(file_path)
+        while size > 1024 and suffix_index < 4:
+            suffix_index += 1  # increment the index of the suffix
+            size = size / 1024.0  # apply the division
+        human_readable_size = "%.*f%s" % (2, size, suffixes[suffix_index])
 
-
-def human_readable_size(size, precision=2):
-    # Source : https://stackoverflow.com/a/32009595/7629797
-    suffixes = ["B", "KB", "MB", "GB", "TB"]
-    suffix_index = 0
-    while size > 1024 and suffix_index < 4:
-        suffix_index += 1  # increment the index of the suffix
-        size = size / 1024.0  # apply the division
-    return "%.*f%s" % (precision, size, suffixes[suffix_index])
+        print(f"population saved into {os.path.abspath(file_path)}" f" File size : {human_readable_size}")

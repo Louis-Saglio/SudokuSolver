@@ -2,7 +2,7 @@ import os
 import pickle
 from datetime import datetime
 from random import choices, random
-from typing import Type, List, Optional, Union, Tuple
+from typing import Type, List, Union, Tuple, Set
 
 Number = Union[float, int]
 
@@ -96,7 +96,7 @@ class GeneticEngine:
             for _ in range(self.POPULATION_SIZE)
         ]
 
-    def run_generation(self, population: Population, do_not_mutate: Optional[Individual]):
+    def run_generation(self, population: Population, do_not_mutate: Set[Individual]):
 
         score_stats = StatCollector()
         mutation_probability_stats = StatCollector()
@@ -104,8 +104,9 @@ class GeneticEngine:
 
         scores = []
         for individual in population:
+            assert individual is not None
 
-            if individual is not do_not_mutate:
+            if individual not in do_not_mutate:
                 individual.mutate()
 
             score = individual.normalized_rate()
@@ -118,14 +119,13 @@ class GeneticEngine:
         biased_scores = [score ** 10 for score in scores]
         for i, (father, mother) in enumerate(
             zip(
-                choices(population, biased_scores, k=self.POPULATION_SIZE - 1),
-                choices(population, biased_scores, k=self.POPULATION_SIZE - 1),
+                choices(population, biased_scores, k=self.POPULATION_SIZE - len(do_not_mutate)),
+                choices(population, biased_scores, k=self.POPULATION_SIZE - len(do_not_mutate)),
             )
         ):
             population[i] = father.reproduce(mother)
 
-        if do_not_mutate is not None:
-            population.append(do_not_mutate)
+        population.extend(do_not_mutate)
 
         return score_stats, mutation_probability_stats, mating_probability_stats
 
@@ -145,7 +145,7 @@ class GeneticEngine:
 
             try:
                 score_stats, mutation_probability_stats, mating_probability_stats = self.run_generation(
-                    population, do_not_mutate=best_individual
+                    population, do_not_mutate={best_individual} if best_individual else set()
                 )
                 best_individual = score_stats.greatest_item
 
@@ -170,7 +170,7 @@ class GeneticEngine:
 
                 else:
                     no_progress_count += 1
-                    if generation_count > 20 and no_progress_count == generation_count // 2:
+                    if generation_count > 20 and no_progress_count >= generation_count // 2:
                         keep_running = False
                         exit_reason = ExitReasons.BLOCKED
 
@@ -193,7 +193,7 @@ class GeneticEngine:
             stats.append(population_stats)
             if exit_reason != ExitReasons.BLOCKED:
                 keep_running = False
-        print("\n", end="")
+            print("\n", end="")
         return best_individual, stats
 
     def save_stats_to_file(self, data: List[List[Tuple[Number, Number, Number]]]) -> None:

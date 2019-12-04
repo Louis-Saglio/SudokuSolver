@@ -4,7 +4,7 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from grids import small_6x6_112
+from grids import easy_13553, small_6x6_112
 
 
 class Frame(tk.Frame):
@@ -33,10 +33,12 @@ class Header(Frame):
 
 
 class Sodoku(Frame):
-    separator_index = 3
+    x_separator = 3
+    y_separator = 3
 
     def init_ui(self, sep_index=2, **kwargs):
-        self.separator_index = sep_index
+        self.x_separator = sep_index
+        self.y_separator = sep_index if sep_index % 3 == 0 else sep_index + 1
 
         for cell in self.given_cells:
             font = ('Helvetica', 13, 'bold')
@@ -55,8 +57,8 @@ class Sodoku(Frame):
         cell_label = tk.Label(self, text=cell_value, width=2, borderwidth=2, relief='groove', font=font)
         cell_label.grid(
             row=row, column=column,
-            pady=(4 if row % self.separator_index == 0 and row else 1, 0),
-            padx=(4 if column % self.separator_index == 0 and column else 1, 0),
+            pady=(4 if row % self.x_separator == 0 and row else 1, 0),
+            padx=(4 if column % self.y_separator == 0 and column else 1, 0),
         )
 
 
@@ -178,5 +180,5 @@ if __name__ == '__main__':
     UI('Sudoku',
        {'populations_save': './data/population_sudoku_2019-11-20_10:35:44.350536',
         'statistics': './data/stats_sudoku_2019-11-20_10:35:44.350282',
-        'given_cells': small_6x6_112,
+        'given_cells': easy_13553,
         }).show()

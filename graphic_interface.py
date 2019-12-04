@@ -33,7 +33,11 @@ class Header(Frame):
 
 
 class Sodoku(Frame):
-    def init_ui(self, **kwargs):
+    separator_index = 3
+
+    def init_ui(self, sep_index=2, **kwargs):
+        self.separator_index = sep_index
+
         for cell in self.given_cells:
             font = ('Helvetica', 13, 'bold')
             self.place_cell(cell.position.coordinates[0], cell.position.coordinates[1], cell.value, font)
@@ -51,8 +55,8 @@ class Sodoku(Frame):
         cell_label = tk.Label(self, text=cell_value, width=2, borderwidth=2, relief='groove', font=font)
         cell_label.grid(
             row=row, column=column,
-            pady=(4 if row % 3 == 0 and row else 1, 0),
-            padx=(4 if column % 3 == 0 and column else 1, 0),
+            pady=(4 if row % self.separator_index == 0 and row else 1, 0),
+            padx=(4 if column % self.separator_index == 0 and column else 1, 0),
         )
 
 
@@ -131,8 +135,11 @@ class UI(tk.Tk):
         with open(config['statistics'], 'rb') as stats_file:
             self.statistics = pickle.load(stats_file)
 
+        max_cell = sorted(config['given_cells'], key=lambda cell: cell.position.coordinates[0])[-1]
+        grid_size = (max_cell.position.coordinates[0] + 1) / 3
+
         self.Header = Header()
-        self.Sodoku = Sodoku(individual=self.individuals[0], given_cells=config['given_cells'])
+        self.Sodoku = Sodoku(sep_index=grid_size, individual=self.individuals[0], given_cells=config['given_cells'])
         self.Cursor = Cursor(
             next_gen=lambda: self.update_generation(self.Cursor.generation_cursor.get() + 1),
             previous_gen=lambda: self.update_generation(self.Cursor.generation_cursor.get() - 1)

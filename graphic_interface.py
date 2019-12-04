@@ -4,12 +4,11 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from grids import easy_13553, small_6x6_112
+from grids import small_6x6_112
 
 
 class Frame(tk.Frame):
-    def __init__(self, individual=None, individual_cursor=0, generation_cursor=0, given_cells=None,
-                 **kwargs):
+    def __init__(self, individual=None, individual_cursor=0, generation_cursor=0, given_cells=None,**kwargs):
         super().__init__()
         self.individual = individual
         self.individual_cursor = tk.IntVar(individual_cursor)
@@ -180,5 +179,5 @@ if __name__ == '__main__':
     UI('Sudoku',
        {'populations_save': './data/population_sudoku_2019-11-20_10:35:44.350536',
         'statistics': './data/stats_sudoku_2019-11-20_10:35:44.350282',
-        'given_cells': easy_13553,
+        'given_cells': small_6x6_112,
         }).show()

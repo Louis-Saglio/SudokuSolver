@@ -1,10 +1,12 @@
+from time import time
+
 from genetic import GeneticEngine
-from graphic_interface import UI
 from grids import *
 from sudoku import Sudoku
 
 
-def main():
+def with_gui_report():
+    from graphic_interface import UI
     given_cells = small_6x6_112
     engine = GeneticEngine(individual_class=Sudoku, population_size=1000, given_cells=given_cells)
     best_solutions, stats = engine.run()
@@ -18,5 +20,15 @@ def main():
     print(best_solutions[-1], sep="")
 
 
-if __name__ == "__main__":
-    main()
+def pure_cmd():
+    start = time()
+    engine = GeneticEngine(individual_class=Sudoku, population_size=1000, given_cells=small_6x6_112)
+    best_solution, stats = engine.run()
+    print(round(time() - start, 2), "seconds")
+    # engine.save_stats_to_file(stats)
+    print(best_solution[-1], sep="")
+
+
+if __name__ == '__main__':
+    pure_cmd()
+    # with_gui_report()

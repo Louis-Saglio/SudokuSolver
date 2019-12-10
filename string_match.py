@@ -7,6 +7,7 @@ from genetic import Individual, Number
 class String(Individual):
     goal = "loremipsumdolorsitamet"
 
+    # noinspection PyMissingConstructor
     def __init__(self, name):
         self.name = name
         self.maxi = 22

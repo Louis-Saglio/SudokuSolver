@@ -5,6 +5,10 @@ from genetic import Individual, Number
 
 
 class String(Individual):
+    """
+    Very simple implementation of Individual for test purposes.
+    May not be uptodate with the latest engine version
+    """
     goal = "loremipsumdolorsitamet"
 
     # noinspection PyMissingConstructor

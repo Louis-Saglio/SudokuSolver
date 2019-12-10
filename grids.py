@@ -1,3 +1,9 @@
+"""
+A collection of sudoku grids to solve
+"""
+
+from typing import Set
+
 from sudoku import Cell
 
 easy_13553 = Cell.build(
@@ -238,7 +244,7 @@ impossible_521901 = Cell.build(
     (8, 6, 8),
 )
 
-empty = set()
+empty: Set[Cell] = set()
 
 small_6x6_112 = Cell.build(
     (0, 0, 1),

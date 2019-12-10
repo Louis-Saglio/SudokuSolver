@@ -272,7 +272,7 @@ class GeneticEngine:
                 keep_running = False
                 exit_reason = ExitReasons.KEYBOARD_INTERRUPT
 
-        # Returns solutions, stats and the reason why we stopped evolving
+        # Returns the best individual of each generation, stats and the reason why we stopped evolving
         # noinspection PyUnboundLocalVariable
         return population_best_individuals, population_score_stats, exit_reason
 

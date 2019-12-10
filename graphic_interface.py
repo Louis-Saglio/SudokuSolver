@@ -1,3 +1,7 @@
+"""
+This page is used to configure the program GUI
+"""
+
 import pickle
 import tkinter as tk
 
@@ -8,7 +12,11 @@ from grids import small_6x6_112
 
 
 class Frame(tk.Frame):
-    def __init__(self, individual=None, individual_cursor=0, generation_cursor=0, given_cells=None,**kwargs):
+    """
+    Class used for create un new frame. Useful to share information between classes.
+    """
+
+    def __init__(self, individual=None, individual_cursor=0, generation_cursor=0, given_cells=None, **kwargs):
         super().__init__()
         self.individual = individual
         self.individual_cursor = tk.IntVar(individual_cursor)
@@ -22,16 +30,27 @@ class Frame(tk.Frame):
         self.init_ui(**kwargs)
 
     def init_ui(self, **kwargs):
+        """
+        This abstract method is the ui constructor.
+        """
         raise NotImplemented
 
 
 class Header(Frame):
+    """
+    Show the title
+    """
+
     def init_ui(self, **kwargs):
         tk.Label(self, text="Résolution d'un sudoku", font=('Helvetica', 20), height=5).pack(side=tk.TOP)
         self.pack()
 
 
 class Sodoku(Frame):
+    """
+    Display the sudoku frame. The bold numbers are the numbers by default.
+    """
+
     x_separator = 3
     y_separator = 3
 
@@ -47,12 +66,18 @@ class Sodoku(Frame):
         self.configure(bg='black')
 
     def fill(self):
+        """
+        Method used to place the rest of the cells
+        """
         for cell in self.individual.cells - self.given_cells:
             self.place_cell(cell.position.coordinates[0], cell.position.coordinates[1], cell.value, ('Helvetica', 13))
 
         self.pack()
 
     def place_cell(self, row, column, cell_value, font):
+        """
+        Method used to place the cells predicted by the algorithm
+        """
         cell_label = tk.Label(self, text=cell_value, width=2, borderwidth=2, relief='groove', font=font)
         cell_label.grid(
             row=row, column=column,
@@ -62,6 +87,10 @@ class Sodoku(Frame):
 
 
 class Cursor(Frame):
+    """
+    Show buttons to change the generation and display the current individual.
+    """
+
     def init_ui(self, next_gen, previous_gen, **kwargs):
         frame = tk.Frame(self)
         tk.Label(frame, text='Génération', font=('Helvetica', 14)).pack()
@@ -82,6 +111,10 @@ class Cursor(Frame):
 
 
 class Score(Frame):
+    """
+    Show minimum, average and maximum scores of the current generation.
+    """
+
     def init_ui(self, **kwargs):
         self.line('Score minimum de la generation: ', 'min_score')
         self.line('Score moyen de la generation: ', 'mean_score')
@@ -90,6 +123,9 @@ class Score(Frame):
         self.pack()
 
     def line(self, text, variable):
+        """
+        Each lines corresponds to a specific statistic.
+        """
         frame = tk.Frame(self)
         tk.Label(frame, text=text, font=('Helvetica', 14)).pack(side=tk.LEFT)
         tk.Label(frame, textvariable=getattr(self, variable), font=('Helvetica', 14), ).pack(side=tk.RIGHT)
@@ -97,6 +133,9 @@ class Score(Frame):
 
 
 class Graph(Frame):
+    """
+    Show the dynamic graphic. It is updated at each change of generation.
+    """
     fig = plt.figure(facecolor=(0.851, 0.851, 0.851))
     canvas = None
 
@@ -110,6 +149,9 @@ class Graph(Frame):
         self.pack()
 
     def update_graph(self, statistics):
+        """
+        Method used to update the graphic canvas
+        """
         plt.clf()
 
         plt.plot([i[0] for i in statistics], marker='o')
@@ -123,6 +165,10 @@ class Graph(Frame):
 
 
 class UI(tk.Tk):
+    """
+        Main class of the gui.
+    """
+
     def __init__(self, title, config, **kwargs):
         super().__init__(**kwargs)
 
@@ -152,6 +198,9 @@ class UI(tk.Tk):
         self.update_generation(0)
 
     def update_generation(self, new_gen_cursor):
+        """
+        Method call when the current generation has changed.
+        """
         try:
             individual = self.individuals[new_gen_cursor]
         except IndexError:
@@ -163,9 +212,9 @@ class UI(tk.Tk):
         self.Cursor.generation_cursor.set(new_gen_cursor)
         self.Cursor.individual_cursor.set(generation_stats[3])
 
-        self.Score.min_score.set(round(generation_stats[0], 2))
+        self.Score.max_score.set(round(generation_stats[0], 2))
         self.Score.mean_score.set(round(generation_stats[1], 2))
-        self.Score.max_score.set(round(generation_stats[2], 2))
+        self.Score.min_score.set(round(generation_stats[2], 2))
 
         self.Graph.update_graph(self.statistics[:new_gen_cursor + 1])
 

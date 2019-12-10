@@ -50,14 +50,16 @@ class StatCollector:
     values_number = 0
     greatest = None
     greatest_item = None
+    greatest_id = None
     smallest = None
     smallest_item = None
 
-    def collect(self, value: Number, item: Individual):
+    def collect(self, value: Number, item: Individual, uid):
         self.total_sum += value
         if self.greatest is None or value > self.greatest:
             self.greatest = value
             self.greatest_item = item
+            self.greatest_id = uid
         if self.smallest is None or value < self.smallest:
             self.smallest = value
             self.smallest_item = item
@@ -103,7 +105,7 @@ class GeneticEngine:
         mating_probability_stats = StatCollector()
 
         scores = []
-        for individual in population:
+        for index, individual in enumerate(population):
             assert individual is not None
 
             if individual not in do_not_mutate:
@@ -112,9 +114,9 @@ class GeneticEngine:
             score = individual.normalized_rate()
             scores.append(score)
 
-            score_stats.collect(score, individual)
-            mutation_probability_stats.collect(individual.mutation_probability, individual)
-            mating_probability_stats.collect(individual.mating_probability, individual)
+            score_stats.collect(score, individual, index)
+            mutation_probability_stats.collect(individual.mutation_probability, individual, index)
+            mating_probability_stats.collect(individual.mating_probability, individual, index)
 
         biased_scores = [score ** 10 for score in scores]
         for i, (father, mother) in enumerate(
@@ -133,6 +135,7 @@ class GeneticEngine:
         population = self.init_population()
 
         population_score_stats = []
+        population_best_individuals = []
 
         best_individual = None
         all_time_best_score = None
@@ -159,7 +162,9 @@ class GeneticEngine:
                 )
                 print(f"\r{text}", end="")
 
-                population_score_stats.append((score_stats.greatest, score_stats.mean, score_stats.smallest))
+                population_score_stats.append((score_stats.greatest, score_stats.mean, score_stats.smallest,
+                                               score_stats.greatest_id))
+                population_best_individuals.append(best_individual)
 
                 if all_time_best_score is None or score_stats.greatest > all_time_best_score:
                     all_time_best_score = score_stats.greatest
@@ -181,22 +186,23 @@ class GeneticEngine:
                 exit_reason = ExitReasons.KEYBOARD_INTERRUPT
 
         # noinspection PyUnboundLocalVariable
-        return best_individual, population_score_stats, exit_reason
+        return population_best_individuals, population_score_stats, exit_reason
 
     def run(self):
         print("max ", "avg ", "min ", "mut-pr", "mat-pr", "g-nbr", sep="\t")
-        best_individual = None
-        stats = []
         keep_running = True
+        best_individuals = []
+        population_stats = []
+
         while keep_running:
-            best_individual, population_stats, exit_reason = self.run_population()
-            stats.append(population_stats)
+            best_individuals, population_stats, exit_reason = self.run_population()
             if exit_reason != ExitReasons.BLOCKED:
                 keep_running = False
-            print("\n", end="")
-        return best_individual, stats
+        print("\n", end="")
 
-    def save_stats_to_file(self, data: List[List[Tuple[Number, Number, Number]]]) -> None:
+        return best_individuals, population_stats
+
+    def save_stats_to_file(self, data: List[List[Tuple[Number, Number, Number]]], export_type: str) -> str:
         directory_name = "data"
 
         # Check that the data directory is free
@@ -207,7 +213,7 @@ class GeneticEngine:
 
         # Compute a nice file name
         file_path = os.path.join(
-            directory_name, f"_{self.INDIVIDUAL_CLASS.__name__.lower()}_{datetime.now()}".replace(" ", "_")
+            directory_name, f"{export_type}_{self.INDIVIDUAL_CLASS.__name__.lower()}_{datetime.now()}".replace(" ", "_")
         )
 
         with open(file_path, "wb") as f:
@@ -223,3 +229,5 @@ class GeneticEngine:
         human_readable_size = "%.*f%s" % (2, size, suffixes[suffix_index])
 
         print(f"population saved into {os.path.abspath(file_path)}" f" File size : {human_readable_size}")
+
+        return os.path.abspath(file_path)

@@ -163,9 +163,9 @@ class UI(tk.Tk):
         self.Cursor.generation_cursor.set(new_gen_cursor)
         self.Cursor.individual_cursor.set(generation_stats[3])
 
-        self.Score.min_score.set(round(generation_stats[0], 2))
+        self.Score.max_score.set(round(generation_stats[0], 2))
         self.Score.mean_score.set(round(generation_stats[1], 2))
-        self.Score.max_score.set(round(generation_stats[2], 2))
+        self.Score.min_score.set(round(generation_stats[2], 2))
 
         self.Graph.update_graph(self.statistics[:new_gen_cursor + 1])
 

@@ -8,7 +8,7 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from grids import small_6x6_112
+from SudokuSolver.grids import small_6x6_112
 
 
 class Frame(tk.Frame):

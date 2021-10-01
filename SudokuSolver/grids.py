@@ -4,7 +4,7 @@ A collection of sudoku grids to solve
 
 from typing import Set
 
-from sudoku import Cell
+from SudokuSolver.sudoku import Cell
 
 easy_13553 = Cell.build(
     (1, 0, 1),

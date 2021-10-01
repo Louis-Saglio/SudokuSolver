@@ -2,7 +2,7 @@ from random import random, shuffle, choice, randint
 from time import time
 from typing import Tuple, Optional, Set, List, Union
 
-from genetic import Individual, Number
+from SudokuSolver.genetic import Individual, Number
 
 
 class Position:

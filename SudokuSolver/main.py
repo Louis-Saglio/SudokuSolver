@@ -1,12 +1,12 @@
 from time import time
 
-from genetic import GeneticEngine
-from grids import *
-from sudoku import Sudoku
+from SudokuSolver.genetic import GeneticEngine
+from SudokuSolver.grids import *
+from SudokuSolver.sudoku import Sudoku
 
 
 def with_gui_report():
-    from graphic_interface import UI
+    from SudokuSolver.graphic_interface import UI
     given_cells = small_6x6_112
     engine = GeneticEngine(individual_class=Sudoku, population_size=1000, given_cells=given_cells)
     best_solutions, stats = engine.run()
@@ -17,16 +17,16 @@ def with_gui_report():
     ui = UI('Sodoku solver', config)
     ui.show()
 
-    print(best_solutions[-1], sep="")
+    print(best_solutions[0], sep="")
 
 
 def pure_cmd():
     start = time()
     engine = GeneticEngine(individual_class=Sudoku, population_size=1000, given_cells=small_6x6_112)
-    best_solution, stats = engine.run()
+    best_solutions, stats = engine.run()
     print(round(time() - start, 2), "seconds")
     # engine.save_stats_to_file(stats)
-    print(best_solution[-1], sep="")
+    print(best_solutions[-1], sep="")
 
 
 if __name__ == '__main__':

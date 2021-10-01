@@ -1,7 +1,7 @@
 from random import random, randint, choice
 from string import ascii_lowercase
 
-from genetic import Individual, Number
+from SudokuSolver.genetic import Individual, Number
 
 
 class String(Individual):

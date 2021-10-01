@@ -42,7 +42,7 @@ class Individual:
 
     def normalized_rate(self) -> Number:
         """
-        This method is not supposed to be overriden.
+        This method is not supposed to be overridden.
         It normalizes the individual score between 0 and 100
         """
         try:
@@ -182,7 +182,7 @@ class GeneticEngine:
 
         # An individual with a score of 10 has 10 times more chances to reproduce
         # and have an offspring in the next generation
-        # However this difference can be accentued by performing an arbitrary operation on the scores.
+        # However this difference can be accentuated by performing an arbitrary operation on the scores.
         # Empirical evidence showed that performing score ** 10 provided better results while trying to solve a sudoku.
         # Later version of this engine may provide a way of specifying this operation as a hyper-parameter
         # instead of hard-coding it
@@ -201,7 +201,7 @@ class GeneticEngine:
         # Returns the collected stats
         return score_stats, mutation_probability_stats, mating_probability_stats
 
-    def run_population(self):
+    def run_population(self, success_score=100):
         """
         Evolve a population until it succeeds or it is stuck in a local optimum
         Also collect stats about the population
@@ -251,7 +251,7 @@ class GeneticEngine:
                     # We just made progress
                     all_time_best_score = score_stats.greatest
                     no_progress_count = 0
-                    if all_time_best_score >= 100:
+                    if all_time_best_score >= success_score:
                         # Check if we achieved the best score possible
                         # If yes, stop evolving
                         keep_running = False
